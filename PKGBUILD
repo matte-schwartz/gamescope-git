@@ -135,6 +135,7 @@ build() {
   meson setup "$srcdir/build64" "$srcdir/gamescope" \
     -Dforce_fallback_for=stb,wlroots,vkroots,libliftoff,glm,libdisplay-info \
     --auto-features=enabled \
+    --prefix=/usr \
     --buildtype=release
   meson compile -C "$srcdir/build64"
 
