@@ -1,35 +1,78 @@
-# even FURTHER modified PKGBUILD based on gamescope-git + mesa-git
-# Maintainer - Matthew Schwartz <matthew.schwartz@linux.dev>
-
-# PKGBUILD based on the official Arch gamescope PKGBUILD
-# Maintainer - Sid Pranjale <sidpranjale127@protonmail.com>
-
+# Maintainer: Pierre-Loup A. Griffais <pgriffais@valvesoftware.com>
+# Maintainer: Matthew Schwartz <matthew.schwartz@linux.dev>
 # Maintainer: Sefa Eyeoglu <contact@scrumplex.net>
 # Maintainer: Bouke Sybren Haarsma <boukehaarsma23 at gmail dot com>
 # Maintainer: Maxime Gauduin <alucryd@archlinux.org>
 # Maintainer: Giancarlo Razzolini <grazzolini@archlinux.org>
 # Contributor: Samuel "scrufulufugus" Monson <smonson@irbash.net>
 # Contributor: PedroHLC <root@pedrohlc.com>
+# Contributor: Sid Pranjale <sidpranjale127@protonmail.com>
 
-_lib32=true  # Toggle 32-bit WSI layer build.
+_lib32=true  # Toggle 32-bit WSI layer build. Set to "false" if you don't need lib32.
 
 pkgbase="gamescope-git"
-pkgver=3.16.1.r38.gef1e8dbe
+pkgname=("gamescope-git")
+if [ "$_lib32" == "true" ]; then
+  pkgname+=("lib32-gamescope-git")
+fi
+
+pkgdesc="Gaming shell (compositing Wayland/X11 window manager) from Valve, with SteamOS session files, built from git."
+pkgver=0.0.0.r0.g00000000  # Will be auto-set by pkgver() function.
 pkgrel=1
-pkgdesc="SteamOS session compositing window manager (64-bit) and optional 32-bit WSI layer"
 arch=('x86_64')
 url="https://github.com/ValveSoftware/gamescope"
-license=('BSD-2-Clause')
-
-# If _lib32=true, we produce two packages. Otherwise, just 'gamescope-git'.
-pkgname=('gamescope-git')
-if [ "$_lib32" == "true" ]; then
-  pkgname+=('lib32-gamescope-git')
-fi
+license=('MIT')  # or ('MIT' 'BSD-2-Clause'), adjust as appropriate
+install=gamescope.install  # If you have an .install script, place it in source=() as well.
 
 ##############################################################################
 # Dependencies
 ##############################################################################
+depends=(
+  'xorg-xwayland'
+  'libavif'
+  'aom'
+  'rav1e'
+  'libxres'
+  'xcb-util-errors'
+  'freerdp'
+  'xcb-util-wm'
+  'libxcomposite'
+  'pixman'
+  'libinput'
+  'seatd'
+  'pipewire'
+  'libxmu'
+  'libxcursor'
+  'powerbuttond'
+  'libdecor'
+  'libei'
+  'luajit'
+  # The standard dependencies from the -git approach:
+  'gcc-libs'
+  'glibc'
+  'glm'
+  'hwdata'
+  'lcms2'
+  'libcap'
+  'libdrm'
+  'libx11'
+  'libxcb'
+  'libxdamage'
+  'libxext'
+  'libxfixes'
+  'libxkbcommon'
+  'libxrender'
+  'libxtst'
+  'libxxf86vm'
+  'sdl2'
+  'vulkan-icd-loader'
+  'wayland'
+)
+
+# Will conflict/provide the official non-git or other variants:
+provides=('gamescope')
+conflicts=('gamescope')
+
 _common_makedepends=(
   'benchmark'
   'cmake'
@@ -39,9 +82,9 @@ _common_makedepends=(
   'ninja'
   'vulkan-headers'
   'wayland-protocols'
+  'openssh'  # from first PKGBUILD
 )
 
-# For 32-bit cross-compile:
 _lib32_makedepends=(
   'gcc-multilib'
   'lib32-glm'
@@ -52,103 +95,138 @@ if [ "$_lib32" == "true" ]; then
   makedepends+=("${_lib32_makedepends[@]}")
 fi
 
+##############################################################################
+# Sources
+##############################################################################
 source=(
-  "git+https://github.com/ValveSoftware/gamescope.git"              # $srcdir/gamescope
-  "git+https://github.com/Joshua-Ashton/wlroots.git"                # $srcdir/wlroots
-  "git+https://gitlab.freedesktop.org/emersion/libliftoff.git"      # $srcdir/libliftoff
-  "git+https://github.com/Joshua-Ashton/vkroots.git"                # $srcdir/vkroots
-  "git+https://gitlab.freedesktop.org/emersion/libdisplay-info.git" # $srcdir/libdisplay-info
-  "git+https://github.com/ValveSoftware/openvr.git"                 # $srcdir/openvr
-  "git+https://github.com/Joshua-Ashton/reshade.git"                # $srcdir/reshade
-  "git+https://github.com/Joshua-Ashton/GamescopeShaders.git#tag=v0.1" # $srcdir/GamescopeShaders
-  "git+https://github.com/KhronosGroup/SPIRV-Headers.git"           # $srcdir/SPIRV-Headers
+  # SteamOS/extra session & systemd service files from first PKGBUILD:
+  "galileo-mura-setup.service"
+  "gamescope-session"
+  "gamescope-wayland.desktop"
+  "gamescope-mimeapps.list"
+  "gamescope-session.service"
+  "gamescope-session.target"
+  "gamescope-portals.conf"
+  "gamescope-xbindkeys.service"
+  "gamescope-mangoapp.service"
+  "ibus-gamescope.service"
+  "powerbuttond.service"
+  "start-gamescope-session"
+  "steam-launcher"
+  "steam-launcher.service"
+  "steam-notif-daemon.service"
+  "steam-short-session-tracker"
+  "steam_http_loader.desktop"
+  "steam-http-loader"
+  # Main Gamescope repo and submodules (from second PKGBUILD):
+  "git+https://github.com/ValveSoftware/gamescope.git"               # $srcdir/gamescope
+  "git+https://github.com/Joshua-Ashton/wlroots.git"                 # $srcdir/wlroots
+  "git+https://gitlab.freedesktop.org/emersion/libliftoff.git"       # $srcdir/libliftoff
+  "git+https://github.com/Joshua-Ashton/vkroots.git"                 # $srcdir/vkroots
+  "git+https://gitlab.freedesktop.org/emersion/libdisplay-info.git"  # $srcdir/libdisplay-info
+  "git+https://github.com/ValveSoftware/openvr.git"                  # $srcdir/openvr
+  "git+https://github.com/Joshua-Ashton/reshade.git"                 # $srcdir/reshade
+  "git+https://github.com/Joshua-Ashton/GamescopeShaders.git#tag=v0.1"  # $srcdir/GamescopeShaders
+  "git+https://github.com/KhronosGroup/SPIRV-Headers.git"            # $srcdir/SPIRV-Headers
+  # If you have a gamescope.install file, add it here too:
+  #"gamescope.install"
 )
-b2sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=(
+  'SKIP'  # galileo-mura-setup.service
+  'SKIP'  # gamescope-session
+  'SKIP'  # gamescope-wayland.desktop
+  'SKIP'  # gamescope-mimeapps.list
+  'SKIP'  # gamescope-session.service
+  'SKIP'  # gamescope-session.target
+  'SKIP'  # gamescope-portals.conf
+  'SKIP'  # gamescope-xbindkeys.service
+  'SKIP'  # gamescope-mangoapp.service
+  'SKIP'  # ibus-gamescope.service
+  'SKIP'  # powerbuttond.service
+  'SKIP'  # start-gamescope-session
+  'SKIP'  # steam-launcher
+  'SKIP'  # steam-launcher.service
+  'SKIP'  # steam-notif-daemon.service
+  'SKIP'  # steam-short-session-tracker
+  'SKIP'  # steam_http_loader.desktop
+  'SKIP'  # steam-http-loader
+  'SKIP'  # gamescope.git
+  'SKIP'  # wlroots.git
+  'SKIP'  # libliftoff.git
+  'SKIP'  # vkroots.git
+  'SKIP'  # libdisplay-info.git
+  'SKIP'  # openvr.git
+  'SKIP'  # reshade.git
+  'SKIP'  # GamescopeShaders.git
+  'SKIP'  # SPIRV-Headers.git
+)
 
 ##############################################################################
-# Package: gamescope-git (64-bit)
+# pkgver: auto-generate from git tag
 ##############################################################################
-# We'll assign final depends/conflicts/provides in the split-package function
-# or define them in "package_gamescope-git()".
-##############################################################################
+pkgver() {
+  cd "${srcdir}/gamescope"
+  # e.g. "v3.16.1-38-gef1e8dbe" -> "3.16.1.r38.gef1e8dbe"
+  git describe --long --tags 2>/dev/null | sed 's/^v//; s/\([^-]*-g\)/r\1/; s/-/./g'
+}
 
 ##############################################################################
-# Package: lib32-gamescope-git (32-bit WSI layer)
+# prepare
 ##############################################################################
-# Only if _lib32=true
-##############################################################################
-# We'll define the function unconditionally, but it only runs if
-# the user actually requested it (or if _lib32=true and they build all).
-##############################################################################
-
-##############################################################################
-# Functions
-##############################################################################
-
 prepare() {
-  cd "$srcdir/gamescope"
+  cd "${srcdir}/gamescope"
 
-  # Add custom patches if needed
-  for src in "${source[@]}"; do
-      src="${src%%::*}"
-      src="${src##*/}"
-      [[ $src = *.patch ]] || continue
-      echo "Applying patch $src..."
-      git apply -v "../$src"
-  done
-
+  # Initialize the submodules for wlroots, vkroots, etc.
   meson subprojects download
 
   git submodule init subprojects/wlroots
-  git config submodule.subprojects/wlroots.url ../wlroots
+  git config submodule.subprojects/wlroots.url "${srcdir}/wlroots"
 
   git submodule init subprojects/libliftoff
-  git config submodule.subprojects/libliftoff.url ../libliftoff
+  git config submodule.subprojects/libliftoff.url "${srcdir}/libliftoff"
 
   git submodule init subprojects/vkroots
-  git config submodule.subprojects/vkroots.url ../vkroots
+  git config submodule.subprojects/vkroots.url "${srcdir}/vkroots"
 
   git submodule init subprojects/libdisplay-info
-  git config submodule.subprojects/libdisplay-info.url ../libdisplay-info
+  git config submodule.subprojects/libdisplay-info.url "${srcdir}/libdisplay-info"
 
   git submodule init subprojects/openvr
-  git config submodule.subprojects/openvr.url ../openvr
+  git config submodule.subprojects/openvr.url "${srcdir}/openvr"
 
   git submodule init src/reshade
-  git config submodule.src/reshade.url ../reshade
+  git config submodule.src/reshade.url "${srcdir}/reshade"
 
   git submodule init thirdparty/SPIRV-Headers
-  git config submodule.thirdparty/SPIRV-Headers.url ../SPIRV-Headers
+  git config submodule.thirdparty/SPIRV-Headers.url "${srcdir}/SPIRV-Headers"
 
   git -c protocol.file.allow=always submodule update
 }
 
-pkgver() {
-  cd "$srcdir/gamescope"
-  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
-}
-
+##############################################################################
+# build
+##############################################################################
 build() {
-  # 1) 64-bit gamescope build
+  # 1) Build 64-bit version of Gamescope
   msg2 "Building 64-bit gamescope..."
-  rm -rf "$srcdir"/build64
-  meson setup "$srcdir/build64" "$srcdir/gamescope" \
+  rm -rf "${srcdir}/build64"
+  meson setup "${srcdir}/build64" "${srcdir}/gamescope" \
     -Dforce_fallback_for=stb,wlroots,vkroots,libliftoff,glm,libdisplay-info \
     --auto-features=enabled \
     --prefix=/usr \
     --buildtype=release
-  meson compile -C "$srcdir/build64"
+  meson compile -C "${srcdir}/build64"
 
-  # 2) If enabled, build 32-bit WSI-only version
+  # 2) Optional: build 32-bit WSI layer
   if [ "$_lib32" == "true" ]; then
-    msg2 "Building 32-bit WSI layer (lib32-gamescope)..."
-    rm -rf "$srcdir"/build32
+    msg2 "Building 32-bit WSI layer (lib32-gamescope-git)..."
+    rm -rf "${srcdir}/build32"
 
     export CC="gcc -m32"
     export CXX="g++ -m32"
     export PKG_CONFIG="i686-pc-linux-gnu-pkg-config"
 
-    meson setup "$srcdir/build32" "$srcdir/gamescope" \
+    meson setup "${srcdir}/build32" "${srcdir}/gamescope" \
       --libdir=/usr/lib32 \
       -Denable_gamescope=false \
       -Denable_gamescope_wsi_layer=true \
@@ -157,62 +235,79 @@ build() {
       --buildtype=release \
       --prefix=/usr
 
-    meson compile -C "$srcdir/build32"
+    meson compile -C "${srcdir}/build32"
   fi
 }
 
 ##############################################################################
-# Package: gamescope-git
+# package: gamescope-git (64-bit main package)
 ##############################################################################
 package_gamescope-git() {
-  depends=(
-    'gcc-libs'
-    'glibc'
-    'glm'
-    'hwdata'
-    'lcms2'
-    'libavif'
-    'libcap.so'
-    'libdecor'
-    'libdrm'
-    'libinput'
-    'libpipewire-0.3.so'
-    'libx11'
-    'libxcb'
-    'libxcomposite'
-    'libxdamage'
-    'libxext'
-    'libxfixes'
-    'libxkbcommon'
-    'libxmu'
-    'libxrender'
-    'libxres'
-    'libxtst'
-    'libxxf86vm'
-    'luajit'
-    'seatd'
-    'sdl2'
-    'vulkan-icd-loader'
-    'wayland'
-    'xcb-util-wm'
-    'xcb-util-errors'
-    'xorg-server-xwayland'
-  )
-  provides=('gamescope')
-  conflicts=('gamescope')
+  # Standard meson install from the 64-bit build
+  DESTDIR="$pkgdir" meson install -C "${srcdir}/build64" --skip-subprojects
 
-  DESTDIR="$pkgdir" meson install -C "$srcdir/build64" --skip-subprojects
-
+  # Copy the ReShade/GamescopeShaders files:
   install -d "$pkgdir/usr/share/gamescope/reshade"
-  cp -r "$srcdir/GamescopeShaders/"* "$pkgdir/usr/share/gamescope/reshade/"
+  cp -r "${srcdir}/GamescopeShaders/"* "$pkgdir/usr/share/gamescope/reshade/"
   chmod -R 755 "$pkgdir/usr/share/gamescope"
 
-  install -Dm644 "$srcdir/gamescope/LICENSE" \
-    "$pkgdir/usr/share/licenses/gamescope-git/LICENSE"
+  # Now install your extra SteamOS session & systemd files:
+  install -D -m 755 "${srcdir}/gamescope-session" \
+                    "$pkgdir/usr/lib/steamos/gamescope-session"
+  install -D -m 755 "${srcdir}/steam-launcher" \
+                    "$pkgdir/usr/lib/steamos/steam-launcher"
+  install -D -m 755 "${srcdir}/steam-short-session-tracker" \
+                    "$pkgdir/usr/lib/steamos/steam-short-session-tracker"
+
+  install -D -m 755 "${srcdir}/start-gamescope-session" \
+                    "$pkgdir/usr/bin/start-gamescope-session"
+  install -D -m 644 "${srcdir}/gamescope-wayland.desktop" \
+                    "$pkgdir/usr/share/wayland-sessions/gamescope-wayland.desktop"
+
+  # URL handler
+  install -D -m 644 "${srcdir}/steam_http_loader.desktop" \
+                    "$pkgdir/usr/share/applications/steam_http_loader.desktop"
+  install -D -m 644 "${srcdir}/gamescope-mimeapps.list" \
+                    "$pkgdir/usr/share/applications/gamescope-mimeapps.list"
+  install -D -m 755 "${srcdir}/steam-http-loader" \
+                    "$pkgdir/usr/bin/steam-http-loader"
+
+  # Systemd user services/targets
+  install -D -m 644 "${srcdir}/galileo-mura-setup.service" \
+                    "$pkgdir/usr/lib/systemd/user/galileo-mura-setup.service"
+  install -D -m 644 "${srcdir}/gamescope-session.service" \
+                    "$pkgdir/usr/lib/systemd/user/gamescope-session.service"
+  install -D -m 644 "${srcdir}/gamescope-session.target" \
+                    "$pkgdir/usr/lib/systemd/user/gamescope-session.target"
+  install -D -m 644 "${srcdir}/gamescope-mangoapp.service" \
+                    "$pkgdir/usr/lib/systemd/user/gamescope-mangoapp.service"
+  install -D -m 644 "${srcdir}/ibus-gamescope.service" \
+                    "$pkgdir/usr/lib/systemd/user/ibus-gamescope.service"
+  install -D -m 644 "${srcdir}/powerbuttond.service" \
+                    "$pkgdir/usr/lib/systemd/user/powerbuttond.service"
+  install -D -m 644 "${srcdir}/steam-launcher.service" \
+                    "$pkgdir/usr/lib/systemd/user/steam-launcher.service"
+  install -D -m 644 "${srcdir}/steam-notif-daemon.service" \
+                    "$pkgdir/usr/lib/systemd/user/steam-notif-daemon.service"
+  install -D -m 644 "${srcdir}/gamescope-xbindkeys.service" \
+                    "$pkgdir/usr/lib/systemd/user/gamescope-xbindkeys.service"
+
+  # Portals
+  install -D -m 644 "${srcdir}/gamescope-portals.conf" \
+                    "$pkgdir/usr/share/xdg-desktop-portal/gamescope-portals.conf"
+
+  # Clean up unneeded bits if they appear:
+  rm -rf "$pkgdir/usr/include"
+  rm -rf "$pkgdir/usr/lib/libwlroots"*
+  rm -rf "$pkgdir/usr/lib/pkgconfig"
+
+  # License
+  install -Dm644 "${srcdir}/gamescope/LICENSE" \
+                 "$pkgdir/usr/share/licenses/gamescope-git/LICENSE"
 }
 
 ##############################################################################
-# Package: lib32-gamescope-git
+# package: lib32-gamescope-git (optional, 32-bit WSI only)
 ##############################################################################
 if [ "$_lib32" == "true" ]; then
 package_lib32-gamescope-git() {
@@ -225,9 +320,9 @@ package_lib32-gamescope-git() {
   provides=('lib32-gamescope')
   conflicts=('lib32-gamescope')
 
-  DESTDIR="$pkgdir" meson install -C "$srcdir/build32" --skip-subprojects
+  DESTDIR="$pkgdir" meson install -C "${srcdir}/build32" --skip-subprojects
 
-  # Remove all the non-WSI bits
+  # Remove anything not strictly needed for the 32-bit WSI:
   rm -rf "$pkgdir/usr/share/gamescope" \
          "$pkgdir/usr/include" \
          "$pkgdir/usr/lib/libwlroots"* \
@@ -235,9 +330,7 @@ package_lib32-gamescope-git() {
          "$pkgdir/usr/lib/pkgconfig" \
          "$pkgdir/usr/lib32/pkgconfig"
 
-  install -Dm644 "$srcdir/gamescope/LICENSE" \
-    "$pkgdir/usr/share/licenses/lib32-gamescope-git/LICENSE"
+  install -Dm644 "${srcdir}/gamescope/LICENSE" \
+                 "$pkgdir/usr/share/licenses/lib32-gamescope-git/LICENSE"
 }
 fi
-
-# vim: ts=2 sw=2 et:
